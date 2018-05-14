@@ -2,6 +2,8 @@ package lukaszdusza.pl.sampleapp;
 
 import android.content.Context;
 import android.content.Intent;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
@@ -16,6 +18,8 @@ import org.json.JSONObject;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -31,6 +35,8 @@ public class MainActivity extends AppCompatActivity {
     private EditText editTextDate;
     private String currentDate;
     static final String FILE_NAME = "costs.txt";
+
+    public static final String TAG = "MainActivity";
 
 
     @Override
@@ -61,6 +67,34 @@ public class MainActivity extends AppCompatActivity {
     //  editTextDate.setText(currentDate);
 
 
+        // =================== DATABASES ===============================
+
+        SQLiteDatabase sqLiteDatabase = getBaseContext().openOrCreateDatabase("sqlite-test-1.db", MODE_PRIVATE,null);
+        sqLiteDatabase.execSQL("create table if not exists costs(date TEXT, subject TEXT, cost INTEGER)");
+        sqLiteDatabase.execSQL("insert into costs values('2018-01-01', 'bulki', 100);");
+        sqLiteDatabase.execSQL("insert into costs values('2018-01-02', 'maslo', 60);");
+        Cursor query = sqLiteDatabase.rawQuery("select * from costs", null);
+
+        List<Costs> costsDB = new ArrayList<>();
+
+        if(query.moveToFirst()) {
+            do {
+
+                String date = query.getString(0);
+                String subject = query.getString(1);
+                int cost = query.getInt(2);
+                Toast.makeText(MainActivity.this, date + subject + cost, Toast.LENGTH_SHORT).show();
+                costsDB.add(new Costs(date, subject, cost));
+                Log.d(TAG, costsDB.toString());
+
+            } while(query.moveToNext());
+
+        }
+        query.close();
+        sqLiteDatabase.close();
+        // =================== END DATABASES ===============================
+
+
         buttonSave.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -68,6 +102,7 @@ public class MainActivity extends AppCompatActivity {
                 textViewSumAll.setText(" " + getAllDayCostSum() + " zł");
                 textViewSumMonth.setText(" " + getMonthCostSum() + " zł");
                 textViewSum.setText("Suma wydatków: \n" + getCurrentDayCostSum() + " zł");
+
             }
         });
 
