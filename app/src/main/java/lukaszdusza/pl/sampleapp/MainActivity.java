@@ -18,6 +18,7 @@ import org.json.JSONObject;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -66,42 +67,22 @@ public class MainActivity extends AppCompatActivity {
         textViewSumMonth.setText(" " + getMonthCostSum() + " zł");
     //  editTextDate.setText(currentDate);
 
-
-        // =================== DATABASES ===============================
-
-        SQLiteDatabase sqLiteDatabase = getBaseContext().openOrCreateDatabase("sqlite-test-1.db", MODE_PRIVATE,null);
-        sqLiteDatabase.execSQL("create table if not exists costs(date TEXT, subject TEXT, cost INTEGER)");
-        sqLiteDatabase.execSQL("insert into costs values('2018-01-01', 'bulki', 100);");
-        sqLiteDatabase.execSQL("insert into costs values('2018-01-02', 'maslo', 60);");
-        Cursor query = sqLiteDatabase.rawQuery("select * from costs", null);
-
-        List<Costs> costsDB = new ArrayList<>();
-
-        if(query.moveToFirst()) {
-            do {
-
-                String date = query.getString(0);
-                String subject = query.getString(1);
-                int cost = query.getInt(2);
-                Toast.makeText(MainActivity.this, date + subject + cost, Toast.LENGTH_SHORT).show();
-                costsDB.add(new Costs(date, subject, cost));
-                Log.d(TAG, costsDB.toString());
-
-            } while(query.moveToNext());
-
-        }
-        query.close();
-        sqLiteDatabase.close();
-        // =================== END DATABASES ===============================
-
-
         buttonSave.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+
+                saveToDB (
+                        editTextDate.getText().toString(),
+                        editTextSubject.getText().toString(),
+                        editTextCost.getText().toString()
+                );
+
                 createNewCost(editTextDate.getText().toString(), editTextSubject.getText().toString(), editTextCost.getText().toString());
                 textViewSumAll.setText(" " + getAllDayCostSum() + " zł");
                 textViewSumMonth.setText(" " + getMonthCostSum() + " zł");
                 textViewSum.setText("Suma wydatków: \n" + getCurrentDayCostSum() + " zł");
+
+
 
             }
         });
@@ -119,7 +100,12 @@ public class MainActivity extends AppCompatActivity {
                     e.printStackTrace();
                 }
                 openActivity(ListActivity.class);
+
+                //loadDB();
+                openListActivity(ListActivity.class, loadDB());
             }
+
+
         });
 
         Button statButton = findViewById(R.id.statButton);
@@ -246,7 +232,7 @@ public class MainActivity extends AppCompatActivity {
          //   CompositionJson.readFile(file);
             JSONObject json = CompositionJson.toJsonFormatFromArray(CompositionJson.toCostList(file));
 
-            System.out.println(json);
+        //    System.out.println(json);
         } catch (IOException e) {
             e.printStackTrace();
             Toast.makeText(getBaseContext(), "nie znaleziono pliku!", Toast.LENGTH_LONG).show();
@@ -310,12 +296,67 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-   public void openActivity(Class c) {
+   public void openListActivity(Class c, List<Costs> costs) {
+
+        Intent intent = new Intent(this, c);
+        intent.putExtra("list", (Serializable) costs);
+        Log.d("intent", intent.getSerializableExtra("list").toString());
+        startActivity(intent);
+    }
+
+    public void openActivity(Class c) {
+
         Intent intent = new Intent(this, c);
         startActivity(intent);
     }
 
+//    public void dbIntent(List<Costs> costs) {
+//        Intent intent = new Intent();
+//        intent.putExtra("list", (Serializable) costs);
+//        Log.d("intent", intent.getSerializableExtra("list").toString());
+//    }
 
+
+    public List<Costs> loadDB() {
+        SQLiteDatabase sqLiteDatabase = getBaseContext().openOrCreateDatabase("sqlite-test-1.db", MODE_PRIVATE,null);
+        sqLiteDatabase.execSQL("create table if not exists costs(date TEXT, subject TEXT, cost TEXT)");
+       // sqLiteDatabase.execSQL("insert into costs values('2018-01-01', 'bulki', 100);");
+       // sqLiteDatabase.execSQL("insert into costs values(?, ?, ?);", new String[] { dat, sub, cos});
+
+        Cursor cursor = sqLiteDatabase.rawQuery("select * from costs", null);
+        List<Costs> costsDB = new ArrayList<>();
+        if(cursor.moveToFirst()) {
+            do {
+
+                String date = cursor.getString(0);
+                String subject = cursor.getString(1);
+                int cost = cursor.getInt(2);
+                costsDB.add(new Costs(date, subject, cost));
+            } while(cursor.moveToNext());
+
+          //  Toast.makeText(MainActivity.this, date + subject + cost, Toast.LENGTH_SHORT).show();
+
+        }
+        cursor.close();
+        sqLiteDatabase.close();
+
+        for ( Costs c: costsDB) {
+            Log.d("sqlbase", c.toString());
+        }
+
+        return costsDB;
+    }
+
+    public  void saveToDB(String dat, String sub, String cos) {
+        String[] elements = {dat, sub, cos};
+        SQLiteDatabase sqLiteDatabase = getBaseContext().openOrCreateDatabase("sqlite-test-1.db", MODE_PRIVATE,null);
+      //  sqLiteDatabase.execSQL("drop table costs");
+        sqLiteDatabase.execSQL("create table if not exists costs(date TEXT, subject TEXT, cost TEXT)");
+        // sqLiteDatabase.execSQL("insert into costs values('2018-01-01', 'bulki', 100);");
+        sqLiteDatabase.execSQL("insert into costs values(?, ?, ?);", elements );
+        sqLiteDatabase.close();
+        Log.d("sqlbase", elements.toString());
+    }
 
 
 }

@@ -6,12 +6,16 @@ import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import org.json.JSONObject;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 
 public class ListActivity extends AppCompatActivity {
 
@@ -19,7 +23,6 @@ public class ListActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_list);
-
 
 
         final Button returnButton = findViewById(R.id.returnButton);
@@ -31,7 +34,18 @@ public class ListActivity extends AppCompatActivity {
             }
         });
 
-        readFile(getFileName());
+
+        getContent();
+
+    }
+
+    public void getContent() {
+
+        TextView listTextView = findViewById(R.id.listTextView);
+        List<Costs> list = (List<Costs>) getIntent().getSerializableExtra("list");
+        listTextView.setText(list.toString());
+
+      //  Log.d("intent", list.toString());
     }
 
     public void openActivity(Class c) {
